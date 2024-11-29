@@ -3,6 +3,7 @@ package net.coreprotect.patch.script;
 import java.sql.Statement;
 import java.util.Locale;
 
+import net.coreprotect.config.StorageType;
 import org.bukkit.Art;
 import org.bukkit.Material;
 import org.bukkit.entity.EntityType;
@@ -14,7 +15,7 @@ public class __2_11_0 {
 
     protected static boolean patch(Statement statement) {
         try {
-            if (Config.getGlobal().MYSQL) {
+            if (Config.getGlobal().STORAGE_TYPE.equals(StorageType.MYSQL)) {
                 statement.executeUpdate("START TRANSACTION");
             }
             else {
@@ -54,7 +55,7 @@ public class __2_11_0 {
                 }
             }
 
-            if (Config.getGlobal().MYSQL) {
+            if (Config.getGlobal().STORAGE_TYPE.equals(StorageType.MYSQL) || Config.getGlobal().STORAGE_TYPE.equals(StorageType.POSTGRESQL)) {
                 statement.executeUpdate("COMMIT");
             }
             else {

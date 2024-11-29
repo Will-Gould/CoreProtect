@@ -88,11 +88,16 @@ public final class CoreProtect extends JavaPlugin {
         if (start) {
             PluginDescriptionFile pluginDescription = this.getDescription();
             Util.sendConsoleComponentStartup(Bukkit.getServer().getConsoleSender(), Phrase.build(Phrase.ENABLE_SUCCESS, ConfigHandler.EDITION_NAME));
-            if (Config.getGlobal().MYSQL) {
-                Chat.console(Phrase.build(Phrase.USING_MYSQL));
-            }
-            else {
-                Chat.console(Phrase.build(Phrase.USING_SQLITE));
+            switch (Config.getGlobal().STORAGE_TYPE){
+                case POSTGRESQL -> {
+                    Chat.console("Using PostgreSQL");
+                }
+                case MYSQL -> {
+                    Chat.console(Phrase.build(Phrase.USING_MYSQL));
+                }
+                default -> {
+                    Chat.console(Phrase.build(Phrase.USING_SQLITE));
+                }
             }
 
             Chat.console("--------------------");

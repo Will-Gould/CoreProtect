@@ -3,9 +3,13 @@ package net.coreprotect.database.logger;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Types;
 import java.util.Locale;
+import java.util.UUID;
 
+import net.coreprotect.config.Config;
 import net.coreprotect.config.ConfigHandler;
+import net.coreprotect.config.StorageType;
 
 public class UsernameLogger {
 
@@ -21,9 +25,13 @@ public class UsernameLogger {
 
             int idRow = -1;
             String userRow = null;
-            String query = "SELECT rowid as id, user FROM " + ConfigHandler.prefix + "user WHERE uuid = ? LIMIT 0, 1";
+            String query = "SELECT rowid as id, \"user\" FROM " + ConfigHandler.prefix + "user WHERE uuid = ? LIMIT 1";
             PreparedStatement preparedStmt = connection.prepareStatement(query);
-            preparedStmt.setString(1, uuid);
+            if(Config.getGlobal().STORAGE_TYPE.equals(StorageType.POSTGRESQL)){
+                preparedStmt.setString(1, uuid);
+            }else{
+                preparedStmt.setString(1, uuid);
+            }
             ResultSet rs = preparedStmt.executeQuery();
             while (rs.next()) {
                 idRow = rs.getInt("id");
@@ -42,9 +50,13 @@ public class UsernameLogger {
             }
 
             if (update) {
-                preparedStmt = connection.prepareStatement("UPDATE " + ConfigHandler.prefix + "user SET user = ?, uuid = ? WHERE rowid = ?");
+                preparedStmt = connection.prepareStatement("UPDATE " + ConfigHandler.prefix + "user SET \"user\" = ?, uuid = ? WHERE rowid = ?");
                 preparedStmt.setString(1, user);
-                preparedStmt.setString(2, uuid);
+                if(Config.getGlobal().STORAGE_TYPE.equals(StorageType.POSTGRESQL)){
+                    preparedStmt.setString(2, uuid);
+                }else{
+                    preparedStmt.setString(2, uuid);
+                }
                 preparedStmt.setInt(3, idRow);
                 preparedStmt.executeUpdate();
                 preparedStmt.close();
@@ -61,9 +73,13 @@ public class UsernameLogger {
             }
             else {
                 boolean foundUUID = false;
-                query = "SELECT rowid as id FROM " + ConfigHandler.prefix + "username_log WHERE uuid = ? AND user = ? LIMIT 0, 1";
+                query = "SELECT rowid as id FROM " + ConfigHandler.prefix + "username_log WHERE uuid = ? AND \"user\" = ? LIMIT 1";
                 PreparedStatement preparedStatement = connection.prepareStatement(query);
-                preparedStatement.setString(1, uuid);
+                if(Config.getGlobal().STORAGE_TYPE.equals(StorageType.POSTGRESQL)){
+                    preparedStatement.setString(1,uuid);
+                }else{
+                    preparedStatement.setString(1, uuid);
+                }
                 preparedStatement.setString(2, user);
                 rs = preparedStatement.executeQuery();
                 while (rs.next()) {
@@ -78,9 +94,13 @@ public class UsernameLogger {
             }
 
             if (update && configUsernames == 1) {
-                preparedStmt = connection.prepareStatement("INSERT INTO " + ConfigHandler.prefix + "username_log (time, uuid, user) VALUES (?, ?, ?)");
+                preparedStmt = connection.prepareStatement("INSERT INTO " + ConfigHandler.prefix + "username_log (time, uuid, \"user\") VALUES (?, ?, ?)");
                 preparedStmt.setInt(1, time);
-                preparedStmt.setString(2, uuid);
+                if(Config.getGlobal().STORAGE_TYPE.equals(StorageType.POSTGRESQL)){
+                    preparedStmt.setObject(2, UUID.fromString(uuid), Types.OTHER);
+                }else{
+                    preparedStmt.setString(2, uuid);
+                }
                 preparedStmt.setString(3, user);
                 preparedStmt.executeUpdate();
                 preparedStmt.close();

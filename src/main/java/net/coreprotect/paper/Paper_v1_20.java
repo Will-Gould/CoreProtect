@@ -4,6 +4,7 @@ import java.net.URI;
 import java.net.URL;
 import java.util.UUID;
 
+import net.coreprotect.config.StorageType;
 import org.bukkit.Bukkit;
 import org.bukkit.block.Sign;
 import org.bukkit.block.Skull;
@@ -34,7 +35,7 @@ public class Paper_v1_20 extends Paper_v1_17 implements PaperInterface {
         if (skull.getPlayerProfile().getId() != null) {
             owner = skull.getPlayerProfile().getId().toString();
         }
-        else if (Config.getGlobal().MYSQL && owner.length() > 255) {
+        else if ((Config.getGlobal().STORAGE_TYPE.equals(StorageType.MYSQL) || Config.getGlobal().STORAGE_TYPE.equals(StorageType.POSTGRESQL)) && owner.length() > 255) {
             return owner.substring(0, 255);
         }
 

@@ -6,6 +6,7 @@ import java.sql.Statement;
 
 import net.coreprotect.config.Config;
 import net.coreprotect.config.ConfigHandler;
+import net.coreprotect.config.StorageType;
 import net.coreprotect.database.Database;
 import net.coreprotect.patch.Patch;
 
@@ -13,7 +14,7 @@ public class __2_16_0 {
 
     protected static boolean patch(Statement statement) {
         try {
-            if (Config.getGlobal().MYSQL) {
+            if (Config.getGlobal().STORAGE_TYPE.equals(StorageType.MYSQL) || Config.getGlobal().STORAGE_TYPE.equals(StorageType.POSTGRESQL)) {
                 try {
                     statement.executeUpdate("ALTER TABLE " + ConfigHandler.prefix + "skull MODIFY owner VARCHAR(64), DROP COLUMN type, DROP COLUMN data, DROP COLUMN rotation");
                 }
@@ -53,7 +54,7 @@ public class __2_16_0 {
                     query = "SELECT rowid as id FROM " + ConfigHandler.prefix + "block WHERE type IN(" + idList + ") AND y='0'";
                     String preparedQueryDelete = "DELETE FROM " + ConfigHandler.prefix + "block WHERE rowid = ?";
                     PreparedStatement preparedStatementDelete = statement.getConnection().prepareStatement(preparedQueryDelete);
-                    Database.beginTransaction(statement, Config.getGlobal().MYSQL);
+                    Database.beginTransaction(statement, Config.getGlobal().STORAGE_TYPE);
                     resultSet = statement.executeQuery(query);
                     while (resultSet.next()) {
                         int rowid = resultSet.getInt("id");
@@ -61,7 +62,7 @@ public class __2_16_0 {
                         preparedStatementDelete.executeUpdate();
                     }
                     resultSet.close();
-                    Database.commitTransaction(statement, Config.getGlobal().MYSQL);
+                    Database.commitTransaction(statement, Config.getGlobal().STORAGE_TYPE);
                 }
             }
             catch (Exception e) {
@@ -78,7 +79,7 @@ public class __2_16_0 {
             PreparedStatement preparedStatementSelect = statement.getConnection().prepareStatement(preparedQuerySelect);
             PreparedStatement preparedStatementDelete = statement.getConnection().prepareStatement(preparedQueryDelete);
 
-            Database.beginTransaction(statement, Config.getGlobal().MYSQL);
+            Database.beginTransaction(statement, Config.getGlobal().STORAGE_TYPE);
             ResultSet resultSet = statement.executeQuery(query);
             while (resultSet.next()) {
                 int rowid = resultSet.getInt("id");
@@ -96,7 +97,7 @@ public class __2_16_0 {
                 }
             }
             resultSet.close();
-            Database.commitTransaction(statement, Config.getGlobal().MYSQL);
+            Database.commitTransaction(statement, Config.getGlobal().STORAGE_TYPE);
         }
         catch (Exception e) {
             e.printStackTrace();

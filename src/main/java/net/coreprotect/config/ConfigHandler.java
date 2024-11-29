@@ -13,6 +13,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import net.coreprotect.CoreProtect;
+import net.coreprotect.worldedit.CoreProtectLogger;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
@@ -50,7 +52,8 @@ public class ConfigHandler extends Queue {
     public static String path = "plugins/CoreProtect/";
     public static String sqlite = "database.db";
     public static String host = "127.0.0.1";
-    public static int port = 3306;
+    public static StorageType storageType = StorageType.POSTGRESQL;
+    public static int port = 5432;
     public static String database = "database";
     public static String username = "root";
     public static String password = "";
@@ -174,16 +177,16 @@ public class ConfigHandler extends Queue {
             ConfigFile.init(ConfigFile.LANGUAGE_CACHE); // load translation cache
 
             // Enforce "co_" table prefix if using SQLite.
-            if (!Config.getGlobal().MYSQL) {
+            if (Config.getGlobal().STORAGE_TYPE.equals(StorageType.SQLITE)) {
                 ConfigHandler.prefixConfig = Config.getGlobal().PREFIX;
                 Config.getGlobal().PREFIX = "co_";
             }
 
-            ConfigHandler.host = Config.getGlobal().MYSQL_HOST;
-            ConfigHandler.port = Config.getGlobal().MYSQL_PORT;
-            ConfigHandler.database = Config.getGlobal().MYSQL_DATABASE;
-            ConfigHandler.username = Config.getGlobal().MYSQL_USERNAME;
-            ConfigHandler.password = Config.getGlobal().MYSQL_PASSWORD;
+            ConfigHandler.host = Config.getGlobal().DATABASE_HOST;
+            ConfigHandler.port = Config.getGlobal().DATABASE_PORT;
+            ConfigHandler.database = Config.getGlobal().DATABASE_NAME;
+            ConfigHandler.username = Config.getGlobal().DATABASE_USERNAME;
+            ConfigHandler.password = Config.getGlobal().DATABASE_PASSWORD;
             ConfigHandler.maximumPoolSize = Config.getGlobal().MAXIMUM_POOL_SIZE;
             ConfigHandler.prefix = Config.getGlobal().PREFIX;
 
@@ -198,71 +201,102 @@ public class ConfigHandler extends Queue {
         // close old pool when we reload the database, e.g. in purge command
         Database.closeConnection();
 
-        if (!Config.getGlobal().MYSQL) {
-            try {
-                File tempFile = File.createTempFile("CoreProtect_" + System.currentTimeMillis(), ".tmp");
-                tempFile.setExecutable(true);
-
-                boolean canExecute = false;
+        switch(Config.getGlobal().STORAGE_TYPE){
+            case POSTGRESQL -> {
+                HikariConfig config = new HikariConfig();
                 try {
-                    canExecute = tempFile.canExecute();
-                }
-                catch (Exception exception) {
-                    // execute access denied by security manager
+                    Class.forName("org.postgresql.Driver");
+                    config.setDriverClassName("org.postgresql.Driver");
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
 
-                if (!canExecute) {
-                    File tempFolder = new File("cache");
-                    boolean exists = tempFolder.exists();
-                    if (!exists) {
-                        tempFolder.mkdir();
+                config.setJdbcUrl("jdbc:postgresql://" + ConfigHandler.host + ":" + ConfigHandler.port + "/" + ConfigHandler.database);
+                config.setUsername(ConfigHandler.username);
+                config.setPassword(ConfigHandler.password);
+                config.setMaximumPoolSize(ConfigHandler.maximumPoolSize);
+                config.setMaxLifetime(60000);
+                config.addDataSourceProperty("characterEncoding", "UTF-8");
+                config.addDataSourceProperty("connectionTimeout", "10000");
+                /* https://github.com/brettwooldridge/HikariCP/wiki/MySQL-Configuration */
+                /* https://cdn.oreillystatic.com/en/assets/1/event/21/Connector_J%20Performance%20Gems%20Presentation.pdf */
+                config.addDataSourceProperty("cachePrepStmts", "true");
+                config.addDataSourceProperty("prepStmtCacheSize", "250");
+                config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
+                config.addDataSourceProperty("useServerPrepStmts", "true");
+                config.addDataSourceProperty("useLocalSessionState", "true");
+                config.addDataSourceProperty("rewriteBatchedStatements", "true");
+                config.addDataSourceProperty("cacheServerConfiguration", "true");
+                config.addDataSourceProperty("maintainTimeStats", "false");
+                /* Disable SSL to suppress the unverified server identity warning */
+                config.addDataSourceProperty("allowPublicKeyRetrieval", "true");
+                config.addDataSourceProperty("useSSL", Config.getGlobal().ENABLE_SSL);
+
+                ConfigHandler.hikariDataSource = new HikariDataSource(config);
+            }
+            case MYSQL -> {
+                HikariConfig config = new HikariConfig();
+                try {
+                    Class.forName("com.mysql.cj.jdbc.Driver");
+                    config.setDriverClassName("com.mysql.cj.jdbc.Driver");
+                } catch (Exception e) {
+                    config.setDriverClassName("com.mysql.jdbc.Driver");
+                }
+
+                config.setJdbcUrl("jdbc:mysql://" + ConfigHandler.host + ":" + ConfigHandler.port + "/" + ConfigHandler.database);
+                config.setUsername(ConfigHandler.username);
+                config.setPassword(ConfigHandler.password);
+                config.setMaximumPoolSize(ConfigHandler.maximumPoolSize);
+                config.setMaxLifetime(60000);
+                config.addDataSourceProperty("characterEncoding", "UTF-8");
+                config.addDataSourceProperty("connectionTimeout", "10000");
+                /* https://github.com/brettwooldridge/HikariCP/wiki/MySQL-Configuration */
+                /* https://cdn.oreillystatic.com/en/assets/1/event/21/Connector_J%20Performance%20Gems%20Presentation.pdf */
+                config.addDataSourceProperty("cachePrepStmts", "true");
+                config.addDataSourceProperty("prepStmtCacheSize", "250");
+                config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
+                config.addDataSourceProperty("useServerPrepStmts", "true");
+                config.addDataSourceProperty("useLocalSessionState", "true");
+                config.addDataSourceProperty("rewriteBatchedStatements", "true");
+                config.addDataSourceProperty("cacheServerConfiguration", "true");
+                config.addDataSourceProperty("maintainTimeStats", "false");
+                /* Disable SSL to suppress the unverified server identity warning */
+                config.addDataSourceProperty("allowPublicKeyRetrieval", "true");
+                config.addDataSourceProperty("useSSL", Config.getGlobal().ENABLE_SSL);
+
+                ConfigHandler.hikariDataSource = new HikariDataSource(config);
+            }
+            default -> {
+                try {
+                    File tempFile = File.createTempFile("CoreProtect_" + System.currentTimeMillis(), ".tmp");
+                    tempFile.setExecutable(true);
+
+                    boolean canExecute = false;
+                    try {
+                        canExecute = tempFile.canExecute();
+                    } catch (Exception exception) {
+                        // execute access denied by security manager
                     }
-                    System.setProperty("java.io.tmpdir", "cache");
+
+                    if (!canExecute) {
+                        File tempFolder = new File("cache");
+                        boolean exists = tempFolder.exists();
+                        if (!exists) {
+                            tempFolder.mkdir();
+                        }
+                        System.setProperty("java.io.tmpdir", "cache");
+                    }
+
+                    tempFile.delete();
+
+                    Class.forName("org.sqlite.JDBC");
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-
-                tempFile.delete();
-
-                Class.forName("org.sqlite.JDBC");
-            }
-            catch (Exception e) {
-                e.printStackTrace();
             }
         }
-        else {
-            HikariConfig config = new HikariConfig();
-            try {
-                Class.forName("com.mysql.cj.jdbc.Driver");
-                config.setDriverClassName("com.mysql.cj.jdbc.Driver");
-            }
-            catch (Exception e) {
-                config.setDriverClassName("com.mysql.jdbc.Driver");
-            }
 
-            config.setJdbcUrl("jdbc:mysql://" + ConfigHandler.host + ":" + ConfigHandler.port + "/" + ConfigHandler.database);
-            config.setUsername(ConfigHandler.username);
-            config.setPassword(ConfigHandler.password);
-            config.setMaximumPoolSize(ConfigHandler.maximumPoolSize);
-            config.setMaxLifetime(60000);
-            config.addDataSourceProperty("characterEncoding", "UTF-8");
-            config.addDataSourceProperty("connectionTimeout", "10000");
-            /* https://github.com/brettwooldridge/HikariCP/wiki/MySQL-Configuration */
-            /* https://cdn.oreillystatic.com/en/assets/1/event/21/Connector_J%20Performance%20Gems%20Presentation.pdf */
-            config.addDataSourceProperty("cachePrepStmts", "true");
-            config.addDataSourceProperty("prepStmtCacheSize", "250");
-            config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
-            config.addDataSourceProperty("useServerPrepStmts", "true");
-            config.addDataSourceProperty("useLocalSessionState", "true");
-            config.addDataSourceProperty("rewriteBatchedStatements", "true");
-            config.addDataSourceProperty("cacheServerConfiguration", "true");
-            config.addDataSourceProperty("maintainTimeStats", "false");
-            /* Disable SSL to suppress the unverified server identity warning */
-            config.addDataSourceProperty("allowPublicKeyRetrieval", "true");
-            config.addDataSourceProperty("useSSL", Config.getGlobal().ENABLE_SSL);
-
-            ConfigHandler.hikariDataSource = new HikariDataSource(config);
-        }
-
-        Database.createDatabaseTables(ConfigHandler.prefix, null, Config.getGlobal().MYSQL, false);
+        Database.createDatabaseTables(ConfigHandler.prefix, null, storageType, false);
     }
 
     public static void loadTypes(Statement statement) {

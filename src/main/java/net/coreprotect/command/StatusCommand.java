@@ -2,6 +2,7 @@ package net.coreprotect.command;
 
 import java.util.concurrent.ConcurrentHashMap;
 
+import net.coreprotect.config.StorageType;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginDescriptionFile;
@@ -65,11 +66,16 @@ public class StatusCommand {
                     if (firstVersion.length() > 0) {
                         firstVersion = " (" + Phrase.build(Phrase.FIRST_VERSION, firstVersion) + ")";
                     }
-                    if (Config.getGlobal().MYSQL) {
-                        Chat.sendMessage(player, Color.DARK_AQUA + Phrase.build(Phrase.STATUS_DATABASE, Color.WHITE, "MySQL") + firstVersion);
-                    }
-                    else {
-                        Chat.sendMessage(player, Color.DARK_AQUA + Phrase.build(Phrase.STATUS_DATABASE, Color.WHITE, "SQLite") + firstVersion);
+                    switch (Config.getGlobal().STORAGE_TYPE){
+                        case MYSQL -> {
+                            Chat.sendMessage(player, Color.DARK_AQUA + Phrase.build(Phrase.STATUS_DATABASE, Color.WHITE, "MySQL") + firstVersion);
+                        }
+                        case POSTGRESQL -> {
+                            Chat.sendMessage(player, Color.DARK_AQUA + Phrase.build(Phrase.STATUS_DATABASE, Color.WHITE, "PostgreSQL") + firstVersion);
+                        }
+                        default -> {
+                            Chat.sendMessage(player, Color.DARK_AQUA + Phrase.build(Phrase.STATUS_DATABASE, Color.WHITE, "SQLite") + firstVersion);
+                        }
                     }
 
                     if (ConfigHandler.worldeditEnabled) {

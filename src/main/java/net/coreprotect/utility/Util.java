@@ -21,6 +21,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import net.coreprotect.config.StorageType;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.bukkit.Bukkit;
@@ -1678,8 +1679,8 @@ public class Util extends Queue {
 
     public static String getWidIndex(String queryTable) {
         String index = "";
-        boolean isMySQL = Config.getGlobal().MYSQL;
-        if (isMySQL) {
+        StorageType storageType = Config.getGlobal().STORAGE_TYPE;
+        if (storageType.equals(StorageType.MYSQL) || storageType.equals(StorageType.POSTGRESQL)) {
             index = "USE INDEX(wid) ";
         }
         else {

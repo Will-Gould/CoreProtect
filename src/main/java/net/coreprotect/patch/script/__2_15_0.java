@@ -6,13 +6,14 @@ import java.sql.Statement;
 
 import net.coreprotect.config.Config;
 import net.coreprotect.config.ConfigHandler;
+import net.coreprotect.config.StorageType;
 import net.coreprotect.database.Database;
 
 public class __2_15_0 {
 
     protected static boolean patch(Statement statement) {
         try {
-            if (Config.getGlobal().MYSQL) {
+            if (Config.getGlobal().STORAGE_TYPE.equals(StorageType.MYSQL) || Config.getGlobal().STORAGE_TYPE.equals(StorageType.POSTGRESQL)) {
                 statement.executeUpdate("ALTER TABLE " + ConfigHandler.prefix + "chat MODIFY message VARCHAR(1000)");
                 statement.executeUpdate("ALTER TABLE " + ConfigHandler.prefix + "command MODIFY message VARCHAR(1000)");
                 statement.executeUpdate("ALTER TABLE " + ConfigHandler.prefix + "user MODIFY user VARCHAR(100)");
@@ -23,7 +24,7 @@ public class __2_15_0 {
             String preparedQuery = "UPDATE " + ConfigHandler.prefix + "material_map SET material = ? WHERE rowid = ?";
             PreparedStatement preparedStatement = statement.getConnection().prepareStatement(preparedQuery);
 
-            Database.beginTransaction(statement, Config.getGlobal().MYSQL);
+            Database.beginTransaction(statement, Config.getGlobal().STORAGE_TYPE);
             ResultSet rs = statement.executeQuery(query);
             while (rs.next()) {
                 int rowid = rs.getInt("id");
@@ -36,10 +37,10 @@ public class __2_15_0 {
                 }
             }
             rs.close();
-            Database.commitTransaction(statement, Config.getGlobal().MYSQL);
+            Database.commitTransaction(statement, Config.getGlobal().STORAGE_TYPE);
 
             try {
-                if (Config.getGlobal().MYSQL) {
+                if (Config.getGlobal().STORAGE_TYPE.equals(StorageType.MYSQL) || Config.getGlobal().STORAGE_TYPE.equals(StorageType.POSTGRESQL)) {
                     statement.executeUpdate("ALTER TABLE " + ConfigHandler.prefix + "block MODIFY COLUMN rowid bigint NOT NULL AUTO_INCREMENT, ADD COLUMN blockdata BLOB");
                 }
                 else {

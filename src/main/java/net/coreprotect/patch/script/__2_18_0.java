@@ -4,6 +4,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
+import net.coreprotect.config.StorageType;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
@@ -25,7 +26,7 @@ public class __2_18_0 {
         try {
 
             try {
-                if (Config.getGlobal().MYSQL) {
+                if (Config.getGlobal().STORAGE_TYPE.equals(StorageType.MYSQL) || Config.getGlobal().STORAGE_TYPE.equals(StorageType.POSTGRESQL)) {
                     statement.executeUpdate("ALTER TABLE " + ConfigHandler.prefix + "block ADD COLUMN blockdata BLOB");
                 }
             }
@@ -57,7 +58,7 @@ public class __2_18_0 {
                 PreparedStatement preparedContainerStatement = statement.getConnection().prepareStatement(preparedContainerQuery);
                 PreparedStatement preparedContainerUpdateStatement = statement.getConnection().prepareStatement(preparedContainerUpdateQuery);
                 PreparedStatement preparedMaterialDeleteStatement = statement.getConnection().prepareStatement(preparedMaterialDeleteQuery);
-                Database.beginTransaction(statement, Config.getGlobal().MYSQL);
+                Database.beginTransaction(statement, Config.getGlobal().STORAGE_TYPE);
                 try {
                     ResultSet resultSet = statement.executeQuery(query);
                     while (resultSet.next()) {
@@ -163,7 +164,7 @@ public class __2_18_0 {
                 catch (Exception e) {
                     e.printStackTrace();
                 }
-                Database.commitTransaction(statement, Config.getGlobal().MYSQL);
+                Database.commitTransaction(statement, Config.getGlobal().STORAGE_TYPE);
 
                 preparedBlockStatement.close();
                 preparedBlockUpdateStatement.close();
@@ -178,7 +179,7 @@ public class __2_18_0 {
 
             if (createIndexes) {
                 try {
-                    if (Config.getGlobal().MYSQL) {
+                    if (Config.getGlobal().STORAGE_TYPE.equals(StorageType.MYSQL) || Config.getGlobal().STORAGE_TYPE.equals(StorageType.POSTGRESQL)) {
                         statement.executeUpdate("ALTER TABLE " + ConfigHandler.prefix + "art_map ADD INDEX(id)");
                         statement.executeUpdate("ALTER TABLE " + ConfigHandler.prefix + "entity_map ADD INDEX(id)");
                         statement.executeUpdate("ALTER TABLE " + ConfigHandler.prefix + "material_map ADD INDEX(id)");

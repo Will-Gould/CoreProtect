@@ -4,6 +4,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
+import net.coreprotect.config.StorageType;
 import org.bukkit.entity.EntityType;
 
 import net.coreprotect.config.Config;
@@ -19,7 +20,7 @@ public class __2_20_0 {
 
     protected static boolean patch(Statement statement) {
         try {
-            if (Config.getGlobal().MYSQL) {
+            if (Config.getGlobal().STORAGE_TYPE.equals(StorageType.MYSQL) || Config.getGlobal().STORAGE_TYPE.equals(StorageType.POSTGRESQL)) {
                 try {
                     statement.executeUpdate("ALTER TABLE " + ConfigHandler.prefix + "command MODIFY message VARCHAR(16000), CONVERT TO CHARACTER SET utf8mb4");
                 }
@@ -61,7 +62,7 @@ public class __2_20_0 {
             String entityQuery = "SELECT rowid, data FROM " + ConfigHandler.prefix + "block WHERE type = (SELECT id FROM " + ConfigHandler.prefix + "material_map WHERE material='minecraft:spawner' LIMIT 1) ORDER BY rowid ASC";
             String preparedQueryUpdate = "UPDATE " + ConfigHandler.prefix + "block SET data = ? WHERE rowid = ?";
             PreparedStatement preparedStatementUpdate = statement.getConnection().prepareStatement(preparedQueryUpdate);
-            Database.beginTransaction(statement, Config.getGlobal().MYSQL);
+            Database.beginTransaction(statement, Config.getGlobal().STORAGE_TYPE);
 
             ResultSet resultSet = statement.executeQuery(entityQuery);
             while (resultSet.next()) {
@@ -97,7 +98,7 @@ public class __2_20_0 {
             resultSet.close();
             preparedStatementUpdate.close();
 
-            Database.commitTransaction(statement, Config.getGlobal().MYSQL);
+            Database.commitTransaction(statement, Config.getGlobal().STORAGE_TYPE);
         }
         catch (Exception e) {
             e.printStackTrace();

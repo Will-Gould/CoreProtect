@@ -5,6 +5,7 @@ import java.sql.Statement;
 import net.coreprotect.config.Config;
 import net.coreprotect.config.ConfigFile;
 import net.coreprotect.config.ConfigHandler;
+import net.coreprotect.config.StorageType;
 import net.coreprotect.language.Phrase;
 import net.coreprotect.language.Selector;
 import net.coreprotect.patch.Patch;
@@ -14,7 +15,7 @@ public class __2_21_0 {
 
     protected static boolean patch(Statement statement) {
         try {
-            if (Config.getGlobal().MYSQL) {
+            if (Config.getGlobal().STORAGE_TYPE.equals(StorageType.MYSQL) || Config.getGlobal().STORAGE_TYPE.equals(StorageType.POSTGRESQL)) {
                 try {
                     statement.executeUpdate("ALTER TABLE " + ConfigHandler.prefix + "item ADD COLUMN rolled_back TINYINT DEFAULT 0;");
                 }

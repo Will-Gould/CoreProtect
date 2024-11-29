@@ -7,6 +7,7 @@ import java.util.Locale;
 
 import net.coreprotect.config.Config;
 import net.coreprotect.config.ConfigHandler;
+import net.coreprotect.config.StorageType;
 
 public class PlayerLookup {
 
@@ -20,11 +21,11 @@ public class PlayerLookup {
             }
 
             String collate = "";
-            if (!Config.getGlobal().MYSQL) {
+            if (Config.getGlobal().STORAGE_TYPE.equals(StorageType.SQLITE)) {
                 collate = " COLLATE NOCASE";
             }
 
-            String query = "SELECT rowid as id, uuid FROM " + ConfigHandler.prefix + "user WHERE user = ?" + collate + " LIMIT 0, 1";
+            String query = "SELECT rowid as id, uuid FROM " + ConfigHandler.prefix + "user WHERE \"user\" = ?" + collate + " LIMIT 0, 1";
             PreparedStatement preparedStmt = connection.prepareStatement(query);
             preparedStmt.setString(1, user);
 

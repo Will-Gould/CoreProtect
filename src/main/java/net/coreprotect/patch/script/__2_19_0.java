@@ -6,6 +6,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
+import net.coreprotect.config.StorageType;
 import org.bukkit.Material;
 import org.bukkit.Tag;
 
@@ -22,7 +23,7 @@ public class __2_19_0 {
 
     protected static boolean patch(Statement statement) {
         try {
-            if (Config.getGlobal().MYSQL) {
+            if (Config.getGlobal().STORAGE_TYPE.equals(StorageType.MYSQL) || Config.getGlobal().STORAGE_TYPE.equals(StorageType.POSTGRESQL)) {
                 try {
                     statement.executeUpdate("ALTER TABLE " + ConfigHandler.prefix + "sign ADD COLUMN action int");
                     statement.executeUpdate("ALTER TABLE " + ConfigHandler.prefix + "sign DROP INDEX wid");
@@ -143,7 +144,7 @@ public class __2_19_0 {
             String preparedQueryUpdate = "UPDATE " + ConfigHandler.prefix + "sign SET action = 1 WHERE rowid = ?";
             PreparedStatement preparedSignStatement = statement.getConnection().prepareStatement(preparedSignQuery);
             PreparedStatement preparedStatementUpdate = statement.getConnection().prepareStatement(preparedQueryUpdate);
-            Database.beginTransaction(statement, Config.getGlobal().MYSQL);
+            Database.beginTransaction(statement, Config.getGlobal().STORAGE_TYPE);
 
             ResultSet resultSet = statement.executeQuery(blockQuery);
             while (resultSet.next()) {
@@ -166,7 +167,7 @@ public class __2_19_0 {
             preparedSignStatement.close();
             preparedStatementUpdate.close();
 
-            Database.commitTransaction(statement, Config.getGlobal().MYSQL);
+            Database.commitTransaction(statement, Config.getGlobal().STORAGE_TYPE);
         }
         catch (Exception e) {
             e.printStackTrace();
