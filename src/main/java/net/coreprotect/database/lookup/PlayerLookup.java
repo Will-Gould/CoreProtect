@@ -25,7 +25,7 @@ public class PlayerLookup {
                 collate = " COLLATE NOCASE";
             }
 
-            String query = "SELECT rowid as id, uuid FROM " + ConfigHandler.prefix + "user WHERE \"user\" = ?" + collate + " LIMIT 0, 1";
+            String query = "SELECT rowid as id, uuid FROM " + ConfigHandler.prefix + "user WHERE \"user\" = ?" + collate + " LIMIT 1";
             PreparedStatement preparedStmt = connection.prepareStatement(query);
             preparedStmt.setString(1, user);
 

@@ -1680,8 +1680,11 @@ public class Util extends Queue {
     public static String getWidIndex(String queryTable) {
         String index = "";
         StorageType storageType = Config.getGlobal().STORAGE_TYPE;
-        if (storageType.equals(StorageType.MYSQL) || storageType.equals(StorageType.POSTGRESQL)) {
+        if (storageType.equals(StorageType.MYSQL)) {
             index = "USE INDEX(wid) ";
+        }
+        if(storageType.equals(StorageType.POSTGRESQL)){
+            index = "";
         }
         else {
             switch (queryTable) {
